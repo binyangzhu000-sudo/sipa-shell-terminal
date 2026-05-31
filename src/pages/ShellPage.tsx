@@ -158,7 +158,8 @@ export default function ShellPage() {
       toast.error('请填写主机地址和用户名');
       return;
     }
-    const proxyUrl = import.meta.env.VITE_WS_PROXY || 'ws://localhost:2222';
+    const saved = JSON.parse(localStorage.getItem('sipa_shell_settings') || '{}');
+    const proxyUrl = saved.wsProxy || import.meta.env.VITE_WS_PROXY || 'wss://ws.soulinpsy.info';
     setStatus('connecting');
     const ws = new WebSocket(proxyUrl);
     wsRef.current = ws;
