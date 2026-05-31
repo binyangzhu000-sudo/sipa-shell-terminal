@@ -1,0 +1,25 @@
+{
+  "name": "sipa-shell-server",
+  "version": "1.0.0",
+  "description": "SIPA Shell — WebSocket SSH Proxy & AI API Server",
+  "main": "api.js",
+  "scripts": {
+    "proxy": "node ws-ssh-proxy.js",
+    "api": "node api.js",
+    "start": "node api.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "ssh2": "^1.16.0",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.81.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

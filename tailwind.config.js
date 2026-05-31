@@ -100,6 +100,10 @@ export default {
                 card: 'var(--shadow-card)',
                 hover: 'var(--shadow-hover)'
             },
+            fontFamily: {
+                mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
             keyframes: {
                 'accordion-down': {
                     from: {
