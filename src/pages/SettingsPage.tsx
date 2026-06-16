@@ -17,7 +17,7 @@ interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-  wsProxy: '',
+  wsProxy: 'wss://ws.soulinpsy.info',
   apiUrl: '',
   fontSize: '14',
   showScanlines: true,
@@ -50,14 +50,14 @@ export default function SettingsPage() {
   const handleSave = () => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     setSaved(true);
-    toast.success('设置已保存');
+    toast.success('Настройки сохранены');
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleReset = () => {
     setSettings(DEFAULTS);
     localStorage.removeItem(SETTINGS_KEY);
-    toast.info('设置已重置为默认值');
+    toast.info('Настройки сброшены до значений по умолчанию');
   };
 
   const handleTestProxy = async () => {
@@ -67,36 +67,36 @@ export default function SettingsPage() {
     try {
       await new Promise<void>((resolve, reject) => {
         const ws = new WebSocket(url);
-        const timeout = setTimeout(() => { ws.close(); reject(new Error('超时')); }, 3000);
+        const timeout = setTimeout(() => { ws.close(); reject(new Error('Таймаут')); }, 3000);
         ws.onopen = () => { clearTimeout(timeout); ws.close(); resolve(); };
-        ws.onerror = () => { clearTimeout(timeout); reject(new Error('连接失败')); };
+        ws.onerror = () => { clearTimeout(timeout); reject(new Error('Ошибка соединения')); };
       });
       setTestResult('ok');
-      toast.success('代理服务器连接正常');
+      toast.success('Прокси-сервер доступен');
     } catch (err) {
       setTestResult('fail');
-      const msg = err instanceof Error ? err.message : '连接失败';
-      toast.error(`代理不可达: ${msg}`);
+      const msg = err instanceof Error ? err.message : 'Ошибка соединения';
+      toast.error(`Прокси недоступен: ${msg}`);
     } finally {
       setTesting(false);
     }
   };
 
   const currentProxy = settings.wsProxy || import.meta.env.VITE_WS_PROXY || 'ws://localhost:2222';
-  const currentApi = settings.apiUrl || import.meta.env.VITE_API_URL || '(使用内置 fallback)';
+  const currentApi = settings.apiUrl || import.meta.env.VITE_API_URL || '(встроенный fallback)';
 
   return (
-    <AppLayout title="设置">
+    <AppLayout title="Настройки">
       <div className="p-4 md:p-6 space-y-6 max-w-2xl">
         {/* WebSocket proxy */}
         <div className="glass-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <Wifi size={16} className="text-primary" />
-            <h2 className="font-mono-terminal text-sm text-primary">WebSocket 代理</h2>
+            <h2 className="font-mono-terminal text-sm text-primary">WebSocket Прокси</h2>
           </div>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">代理服务器 URL</Label>
+              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">URL прокси-сервера</Label>
               <div className="flex gap-2">
                 <Input
                   value={settings.wsProxy}
@@ -117,17 +117,17 @@ export default function SettingsPage() {
                 >
                   {testing ? <RefreshCw size={12} className="animate-spin" /> :
                    testResult === 'ok' ? <Check size={12} /> : <Wifi size={12} />}
-                  测试
+                  Тест
                 </Button>
               </div>
               <p className="font-mono-terminal text-xs text-muted-foreground mt-1">
-                当前使用: <span className="text-foreground">{currentProxy}</span>
+                Сейчас используется: <span className="text-foreground">{currentProxy}</span>
               </p>
             </div>
             <div className="bg-black/30 border border-border p-3">
-              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">启动本地代理服务器：</p>
+              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">Запуск локального прокси-сервера:</p>
               <code className="font-mono-terminal text-xs text-primary block">node server/ws-ssh-proxy.js</code>
-              <p className="font-mono-terminal text-xs text-muted-foreground mt-2">代理将监听 ws://localhost:2222</p>
+              <p className="font-mono-terminal text-xs text-muted-foreground mt-2">Прокси будет слушать ws://localhost:2222</p>
             </div>
           </div>
         </div>
@@ -136,11 +136,11 @@ export default function SettingsPage() {
         <div className="glass-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <Bot size={16} className="text-accent-foreground" />
-            <h2 className="font-mono-terminal text-sm text-accent-foreground">AI API 配置</h2>
+            <h2 className="font-mono-terminal text-sm text-accent-foreground">Конфигурация AI API</h2>
           </div>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">API 服务器 URL</Label>
+              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">URL API-сервера</Label>
               <Input
                 value={settings.apiUrl}
                 onChange={e => update('apiUrl', e.target.value)}
@@ -148,20 +148,20 @@ export default function SettingsPage() {
                 className="font-mono-terminal text-sm h-9 bg-input border-border focus:border-accent-foreground"
               />
               <p className="font-mono-terminal text-xs text-muted-foreground mt-1">
-                当前使用: <span className="text-foreground">{currentApi}</span>
+                Сейчас используется: <span className="text-foreground">{currentApi}</span>
               </p>
             </div>
             <div className="bg-accent/20 border border-accent-foreground/10 p-3">
-              <p className="font-mono-terminal text-xs text-accent-foreground mb-1">💡 预览模式</p>
+              <p className="font-mono-terminal text-xs text-accent-foreground mb-1">💡 Режим предпросмотра</p>
               <p className="font-mono-terminal text-xs text-muted-foreground">
-                当 API URL 为空时，AI 助手将使用内置 fallback 模式，可以演示功能但回答是预置的。
-                启动 <code className="text-accent-foreground">server/api.js</code> 后填入地址可获得完整 AI 功能。
+                Если URL API не задан, ИИ-помощник использует встроенный fallback — функции доступны, но ответы предустановлены.
+                Запустите <code className="text-accent-foreground">server/api.js</code> и укажите адрес для полного ИИ.
               </p>
             </div>
             <div className="bg-black/30 border border-border p-3">
-              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">启动 API 服务器：</p>
+              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">Запуск API-сервера:</p>
               <code className="font-mono-terminal text-xs text-accent-foreground block">node server/api.js</code>
-              <p className="font-mono-terminal text-xs text-muted-foreground mt-2">API 将监听 http://localhost:3001</p>
+              <p className="font-mono-terminal text-xs text-muted-foreground mt-2">API будет слушать http://localhost:3001</p>
             </div>
           </div>
         </div>
@@ -170,11 +170,11 @@ export default function SettingsPage() {
         <div className="glass-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <Monitor size={16} className="text-info" />
-            <h2 className="font-mono-terminal text-sm text-info">终端外观</h2>
+            <h2 className="font-mono-terminal text-sm text-info">Внешний вид терминала</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">字体大小 (px)</Label>
+              <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">Размер шрифта (px)</Label>
               <div className="flex items-center gap-3">
                 <Input
                   type="number"
@@ -184,13 +184,13 @@ export default function SettingsPage() {
                   onChange={e => update('fontSize', e.target.value)}
                   className="font-mono-terminal text-sm h-9 bg-input border-border focus:border-primary w-24"
                 />
-                <span className="font-mono-terminal text-xs text-muted-foreground">推荐: 12–16px</span>
+                <span className="font-mono-terminal text-xs text-muted-foreground">Рекомендовано: 12–16px</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-xs font-mono-terminal text-foreground block">扫描线效果</Label>
-                <p className="font-mono-terminal text-xs text-muted-foreground mt-0.5">在终端区域显示 CRT 扫描线覆盖层</p>
+                <Label className="text-xs font-mono-terminal text-foreground block">Эффект сканлайнов</Label>
+                <p className="font-mono-terminal text-xs text-muted-foreground mt-0.5">Показывать CRT-сканлайны в области терминала</p>
               </div>
               <Switch
                 checked={settings.showScanlines}
@@ -209,10 +209,10 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-3">
             <div className="bg-black/30 border border-warning/20 p-3">
-              <p className="font-mono-terminal text-xs text-warning mb-2">架构说明</p>
+              <p className="font-mono-terminal text-xs text-warning mb-2">Архитектура</p>
               <p className="font-mono-terminal text-xs text-muted-foreground">
-                使用 Cloudflare Tunnel 将本地 ws-ssh-proxy 安全发布到公网，
-                无需开放防火墙端口，流量通过 Cloudflare 边缘节点加密传输。
+                Cloudflare Tunnel публикует локальный ws-ssh-proxy в интернет без открытия портов в файрволле —
+                трафик шифруется через edge-узлы Cloudflare.
               </p>
             </div>
             <div>
@@ -245,7 +245,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="bg-black/30 border border-border p-3">
-              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">使用 cloudflared 启动隧道：</p>
+              <p className="font-mono-terminal text-xs text-muted-foreground mb-1">Запуск туннеля через cloudflared:</p>
               <code className="font-mono-terminal text-xs text-warning block whitespace-pre-wrap">{`cloudflared tunnel run --url ws://localhost:2222 ${settings.cfTunnelId || '<tunnel-id>'}`}</code>
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
             onClick={handleSave}
           >
             {saved ? <Check size={14} /> : <Save size={14} />}
-            {saved ? '已保存' : '保存设置'}
+            {saved ? 'Сохранено' : 'Сохранить настройки'}
           </Button>
           <Button
             variant="ghost"
@@ -266,7 +266,7 @@ export default function SettingsPage() {
             onClick={handleReset}
           >
             <RefreshCw size={14} />
-            重置
+            Сбросить
           </Button>
         </div>
       </div>

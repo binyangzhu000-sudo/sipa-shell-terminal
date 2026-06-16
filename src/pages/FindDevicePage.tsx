@@ -1,291 +1,532 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Search, Loader2, Wifi, WifiOff, Terminal, Plus, Trash2, ChevronRight, Cpu, Network } from 'lucide-react';
+import {
+  Search, Terminal, Plus, Trash2, ChevronRight, Cpu, Edit2, X, Check, Camera, MapPin,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
 import AppLayout from '@/components/layouts/AppLayout';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useLang } from '@/contexts/LangContext';
 
 interface Device {
   id: string;
   name: string;
-  ip: string;
+  host: string;
   port: string;
-  username: string;
-  os: string;
-  status: 'online' | 'offline' | 'unknown';
-  lastSeen?: string;
+  user: string;
+  addedAt: string;
 }
 
-const SAMPLE_DEVICES: Device[] = [
-  { id: '1', name: 'Web Server', ip: '192.168.1.10', port: '22', username: 'admin', os: 'Ubuntu 22.04', status: 'online', lastSeen: '刚刚' },
-  { id: '2', name: 'DB Server', ip: '192.168.1.20', port: '22', username: 'postgres', os: 'Debian 12', status: 'online', lastSeen: '2 分钟前' },
-  { id: '3', name: 'Dev Machine', ip: '192.168.1.30', port: '2222', username: 'developer', os: 'Ubuntu 20.04', status: 'offline', lastSeen: '3 小时前' },
-  { id: '4', name: 'Backup Server', ip: '10.0.0.5', port: '22', username: 'backup', os: 'CentOS 7', status: 'unknown', lastSeen: '1 天前' },
+const STORAGE_KEY = 'sipa_devices';
+const WEBHOOK_SERVER = 'http://172.27.22.217:9922';
+const SNAPSHOT_DEVICES = new Set(['t15', 'x7']);
+
+interface SnapshotPhoto {
+  b64: string;
+  fresh?: boolean;
+}
+
+interface SnapshotResult {
+  photos?: Record<string, SnapshotPhoto>;
+  gps_links?: Record<string, string>;
+  error?: string;
+}
+
+const SEED_DEVICES: Device[] = [
+  { id: 'seed-t15', name: 'T15', host: '192.168.1.10', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
+  { id: 'seed-server', name: 'SERVER', host: '172.27.22.217', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
+  { id: 'seed-laptop', name: 'Laptop', host: '172.27.232.94', port: '22', user: 'aelin', addedAt: '2026-01-01T00:00:00.000Z' },
 ];
 
-const OS_ICONS: Record<string, string> = {
-  ubuntu: '🐧',
-  debian: '🐧',
-  centos: '🐧',
-  arch: '🐧',
-  windows: '🪟',
-  macos: '🍎',
-};
-
-function getOsIcon(os: string) {
-  const lower = os.toLowerCase();
-  for (const key of Object.keys(OS_ICONS)) {
-    if (lower.includes(key)) return OS_ICONS[key];
+function loadDevices(): Device[] {
+  try {
+    const stored: Device[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    // Merge seeds: add any seed that isn't already present (by id or by host)
+    const existingIds = new Set(stored.map(d => d.id));
+    const existingHosts = new Set(stored.map(d => d.host));
+    const missing = SEED_DEVICES.filter(s => !existingIds.has(s.id) && !existingHosts.has(s.host));
+    if (missing.length > 0) {
+      const merged = [...missing, ...stored];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      return merged;
+    }
+    return stored;
+  } catch {
+    return SEED_DEVICES;
   }
-  return '💻';
 }
 
-function StatusBadge({ status }: { status: Device['status'] }) {
-  const map = {
-    online: { label: '在线', className: 'text-primary border-primary/30 bg-primary/10' },
-    offline: { label: '离线', className: 'text-destructive border-destructive/30 bg-destructive/10' },
-    unknown: { label: '未知', className: 'text-muted-foreground border-border bg-muted/10' },
-  };
-  const { label, className } = map[status];
-  return (
-    <span className={cn('font-mono-terminal text-xs px-2 py-0.5 border', className)}>
-      {status === 'online' && <span className="status-pulse inline-block w-1.5 h-1.5 rounded-full bg-primary mr-1.5 align-middle" />}
-      {label}
-    </span>
-  );
+function saveDevices(devices: Device[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
 }
+
+const emptyForm = { name: '', host: '', port: '22', user: '' };
 
 export default function FindDevicePage() {
   const navigate = useNavigate();
+  const { t } = useLang();
+  const [devices, setDevices] = useState<Device[]>(loadDevices);
   const [query, setQuery] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [devices, setDevices] = useState<Device[]>(SAMPLE_DEVICES);
-  const [searchResult, setSearchResult] = useState<Device | null>(null);
-  const [searchDone, setSearchDone] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [formErrors, setFormErrors] = useState<Partial<typeof emptyForm>>({});
+  const [snapshotLoading, setSnapshotLoading] = useState<string | null>(null);
+  const [snapshotResult, setSnapshotResult] = useState<{ deviceId: string; data: SnapshotResult } | null>(null);
+  const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
 
-  const handleSearch = async () => {
-    if (!query.trim()) {
-      toast.error('请输入设备名称或 IP 地址');
-      return;
-    }
-    setSearching(true);
-    setSearchDone(false);
+  // Persist on every change
+  useEffect(() => {
+    saveDevices(devices);
+  }, [devices]);
 
-    // Simulate search
-    await new Promise(r => setTimeout(r, 800));
-
-    const found = devices.find(d =>
-      d.name.toLowerCase().includes(query.toLowerCase()) ||
-      d.ip.includes(query) ||
-      d.username.toLowerCase().includes(query.toLowerCase())
-    );
-
-    setSearchResult(found || null);
-    setSearchDone(true);
-    setSearching(false);
-
-    if (!found) {
-      toast.info('未找到匹配的设备');
-    }
+  const updateForm = (key: keyof typeof emptyForm, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    setFormErrors(prev => ({ ...prev, [key]: undefined }));
   };
 
-  const handleQuickConnect = (device: Device) => {
-    sessionStorage.setItem('sipa_quick_connect', JSON.stringify({
-      name: device.name,
-      host: device.ip,
-      port: device.port,
-      username: device.username,
-      authType: 'password',
-    }));
-    navigate('/shell');
-    toast.info(`正在跳转，连接 ${device.name}…`);
+  const validateForm = (): boolean => {
+    const errors: Partial<typeof emptyForm> = {};
+    if (!form.name.trim()) errors.name = 'Required';
+    if (!form.host.trim()) errors.host = 'Required';
+    if (!form.port.trim()) errors.port = 'Required';
+    if (!form.user.trim()) errors.user = 'Required';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const handleRemoveDevice = (id: string) => {
+  const openAdd = () => {
+    setForm(emptyForm);
+    setFormErrors({});
+    setEditId(null);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (device: Device) => {
+    setForm({ name: device.name, host: device.host, port: device.port, user: device.user });
+    setFormErrors({});
+    setEditId(device.id);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!validateForm()) return;
+    if (editId) {
+      setDevices(prev =>
+        prev.map(d =>
+          d.id === editId ? { ...d, ...form } : d
+        )
+      );
+      toast.success('Device updated');
+    } else {
+      const newDevice: Device = {
+        id: crypto.randomUUID(),
+        ...form,
+        addedAt: new Date().toISOString(),
+      };
+      setDevices(prev => [...prev, newDevice]);
+      toast.success('Device added');
+    }
+    setDialogOpen(false);
+    setEditId(null);
+    setForm(emptyForm);
+  };
+
+  const handleDelete = (id: string) => {
     setDevices(prev => prev.filter(d => d.id !== id));
-    toast.success('设备已从列表移除');
+    toast.success('Device removed');
   };
 
-  const handleAddToConnections = (device: Device) => {
-    const stored = JSON.parse(localStorage.getItem('sipa_shell_connections') || '[]');
-    const newConn = {
-      id: crypto.randomUUID(),
-      name: device.name,
-      host: device.ip,
-      port: device.port,
-      username: device.username,
-      authType: 'password',
-      createdAt: new Date().toISOString(),
-    };
-    stored.push(newConn);
-    localStorage.setItem('sipa_shell_connections', JSON.stringify(stored));
-    toast.success(`${device.name} 已添加到连接列表`);
+  const handleConnect = (device: Device) => {
+    sessionStorage.setItem(
+      'sipa_quick_connect',
+      JSON.stringify({
+        name: device.name,
+        host: device.host,
+        port: device.port,
+        username: device.user,
+        authType: 'password',
+      })
+    );
+    navigate('/shell');
+    toast.info(`Connecting to ${device.name}…`);
   };
 
-  const filteredDevices = query.trim()
-    ? devices.filter(d =>
-        d.name.toLowerCase().includes(query.toLowerCase()) ||
-        d.ip.includes(query)
+  const handleSnapshot = async (device: Device) => {
+    const deviceKey = device.name.toLowerCase();
+    setSnapshotLoading(device.id);
+    try {
+      const token = import.meta.env.VITE_FIND_DEVICE_TOKEN || '';
+      const res = await fetch(`${WEBHOOK_SERVER}/find-device`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ device: deviceKey }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+      const data: SnapshotResult = await res.json();
+      setSnapshotResult({ deviceId: device.id, data });
+      setSnapshotDialogOpen(true);
+    } catch (err: unknown) {
+      toast.error(`Snapshot failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSnapshotLoading(null);
+    }
+  };
+
+  const filtered = query.trim()
+    ? devices.filter(
+        d =>
+          d.name.toLowerCase().includes(query.toLowerCase()) ||
+          d.host.toLowerCase().includes(query.toLowerCase()) ||
+          d.user.toLowerCase().includes(query.toLowerCase())
       )
     : devices;
 
   return (
-    <AppLayout title="查找设备">
-      <div className="p-4 md:p-6 space-y-6 max-w-4xl">
-        {/* Search */}
-        <div className="glass-panel border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Search size={16} className="text-primary" />
-            <h2 className="font-mono-terminal text-sm text-primary">设备搜索</h2>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="输入设备名称、IP 地址或用户名..."
-              className="font-mono-terminal text-sm h-9 bg-input border-border focus:border-primary flex-1"
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            />
-            <Button
-              className="h-9 px-4 font-mono-terminal text-sm bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm gap-2 shrink-0"
-              onClick={handleSearch}
-              disabled={searching}
-            >
-              {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-              搜索
-            </Button>
-          </div>
-        </div>
-
-        {/* Search result */}
-        {searchDone && (
-          <div className="glass-panel border border-border p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Network size={16} className="text-primary" />
-              <h2 className="font-mono-terminal text-sm text-primary">搜索结果</h2>
+    <AppLayout title={t('device.title')}>
+      <div className="p-4 md:p-6 space-y-6 max-w-5xl">
+        {/* Header row */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-48">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={t('device.search')}
+                className="font-mono-terminal text-sm h-9 bg-input border-border focus:border-primary pl-8"
+              />
             </div>
-            {searchResult ? (
-              <div className="border border-primary/30 p-4 bg-primary/5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center border border-primary/20 font-mono-terminal text-lg">
-                      {getOsIcon(searchResult.os)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono-terminal text-sm text-foreground font-medium">{searchResult.name}</span>
-                        <StatusBadge status={searchResult.status} />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="font-mono-terminal text-xs text-muted-foreground">IP: <span className="text-primary">{searchResult.ip}:{searchResult.port}</span></p>
-                        <p className="font-mono-terminal text-xs text-muted-foreground">用户: <span className="text-foreground">{searchResult.username}</span></p>
-                        <p className="font-mono-terminal text-xs text-muted-foreground">系统: <span className="text-foreground">{searchResult.os}</span></p>
-                      </div>
-                    </div>
+          </div>
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={open => {
+              setDialogOpen(open);
+              if (!open) {
+                setEditId(null);
+                setForm(emptyForm);
+                setFormErrors({});
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                className="h-9 px-4 font-mono-terminal text-sm bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm gap-2 shrink-0"
+                onClick={openAdd}
+              >
+                <Plus size={14} />
+                {t('device.add')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-md bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="font-mono-terminal text-sm text-primary">
+                  {editId ? t('device.edit') : t('device.add')}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-1">
+                <div>
+                  <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">
+                    {t('device.name')}
+                  </Label>
+                  <Input
+                    value={form.name}
+                    onChange={e => updateForm('name', e.target.value)}
+                    placeholder="My Server"
+                    className={cn(
+                      'font-mono-terminal text-sm h-8 bg-input border-border',
+                      formErrors.name && 'border-destructive'
+                    )}
+                  />
+                  {formErrors.name && (
+                    <p className="font-mono-terminal text-xs text-destructive mt-0.5">{formErrors.name}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">
+                      {t('device.host')}
+                    </Label>
+                    <Input
+                      value={form.host}
+                      onChange={e => updateForm('host', e.target.value)}
+                      placeholder="192.168.1.10"
+                      className={cn(
+                        'font-mono-terminal text-sm h-8 bg-input border-border',
+                        formErrors.host && 'border-destructive'
+                      )}
+                    />
+                    {formErrors.host && (
+                      <p className="font-mono-terminal text-xs text-destructive mt-0.5">{formErrors.host}</p>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs font-mono-terminal bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm gap-1"
-                      onClick={() => handleQuickConnect(searchResult)}
-                    >
-                      <Terminal size={12} />
-                      快速连接
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs font-mono-terminal border border-border text-muted-foreground hover:text-primary gap-1"
-                      onClick={() => handleAddToConnections(searchResult)}
-                    >
-                      <Plus size={12} />
-                      保存连接
-                    </Button>
+                  <div>
+                    <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">
+                      {t('device.port')}
+                    </Label>
+                    <Input
+                      value={form.port}
+                      onChange={e => updateForm('port', e.target.value)}
+                      placeholder="22"
+                      className={cn(
+                        'font-mono-terminal text-sm h-8 bg-input border-border',
+                        formErrors.port && 'border-destructive'
+                      )}
+                    />
+                    {formErrors.port && (
+                      <p className="font-mono-terminal text-xs text-destructive mt-0.5">{formErrors.port}</p>
+                    )}
                   </div>
                 </div>
+                <div>
+                  <Label className="text-xs font-mono-terminal text-muted-foreground mb-1 block">
+                    {t('device.user')}
+                  </Label>
+                  <Input
+                    value={form.user}
+                    onChange={e => updateForm('user', e.target.value)}
+                    placeholder="root"
+                    className={cn(
+                      'font-mono-terminal text-sm h-8 bg-input border-border',
+                      formErrors.user && 'border-destructive'
+                    )}
+                  />
+                  {formErrors.user && (
+                    <p className="font-mono-terminal text-xs text-destructive mt-0.5">{formErrors.user}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    className="flex-1 h-8 font-mono-terminal text-sm bg-primary text-primary-foreground hover:bg-primary/90 gap-1"
+                    onClick={handleSave}
+                  >
+                    <Check size={12} />
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-3 font-mono-terminal text-sm border border-border text-muted-foreground hover:text-primary"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    <X size={12} />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 border border-dashed border-border">
-                <WifiOff size={28} className="text-muted-foreground/40 mx-auto mb-3" />
-                <p className="font-mono-terminal text-sm text-muted-foreground">未找到设备 "{query}"</p>
-                <p className="font-mono-terminal text-xs text-muted-foreground mt-1">尝试其他搜索词，或手动添加到连接列表</p>
-              </div>
-            )}
-          </div>
-        )}
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* Devices table */}
         <div className="glass-panel border border-border p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Cpu size={16} className="text-primary" />
-              <h2 className="font-mono-terminal text-sm text-primary">已知设备</h2>
+              <h2 className="font-mono-terminal text-sm text-primary">{t('device.title')}</h2>
               <Badge className="font-mono-terminal text-xs px-1.5 py-0 h-4 bg-primary/10 text-primary border-0">
-                {filteredDevices.length}
+                {filtered.length}
               </Badge>
             </div>
-            <div className="flex items-center gap-2 font-mono-terminal text-xs text-muted-foreground">
-              <span className="status-pulse inline-block w-1.5 h-1.5 rounded-full bg-primary" />
-              在线: {devices.filter(d => d.status === 'online').length}
-              <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-destructive/70" />
-              离线: {devices.filter(d => d.status === 'offline').length}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-border">
+              <Cpu size={28} className="text-muted-foreground/40 mx-auto mb-3" />
+              {devices.length === 0 ? (
+                <>
+                  <p className="font-mono-terminal text-sm text-muted-foreground">{t('device.empty')}</p>
+                  <Button
+                    size="sm"
+                    className="mt-4 h-8 text-xs font-mono-terminal bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm gap-1"
+                    onClick={openAdd}
+                  >
+                    <Plus size={12} />
+                    {t('device.add')}
+                  </Button>
+                </>
+              ) : (
+                <p className="font-mono-terminal text-xs text-muted-foreground">
+                  No results for "{query}"
+                </p>
+              )}
             </div>
-          </div>
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-max">
-              <thead>
-                <tr className="border-b border-border">
-                  {['设备名称', 'IP 地址', '端口', '用户名', '操作系统', '最后在线', '状态', '操作'].map(h => (
-                    <th key={h} className="text-left px-3 py-2 font-mono-terminal text-xs text-muted-foreground whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDevices.map(device => (
-                  <tr key={device.id} className="border-b border-border/50 hover:bg-primary/3 transition-colors">
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{getOsIcon(device.os)}</span>
-                        <span className="font-mono-terminal text-xs text-foreground">{device.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-primary">{device.ip}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-muted-foreground">{device.port}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-foreground">{device.username}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-muted-foreground">{device.os}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-muted-foreground">{device.lastSeen || '—'}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <StatusBadge status={device.status} />
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => handleQuickConnect(device)} title="连接">
-                          <ChevronRight size={12} />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => handleAddToConnections(device)} title="保存">
-                          <Plus size={12} />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveDevice(device.id)} title="移除">
-                          <Trash2 size={12} />
-                        </Button>
-                      </div>
-                    </td>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-max">
+                <thead>
+                  <tr className="border-b border-border">
+                    {[
+                      t('device.name'),
+                      t('device.host'),
+                      t('device.port'),
+                      t('device.user'),
+                      'Added',
+                      'Actions',
+                    ].map(h => (
+                      <th
+                        key={h}
+                        className="text-left px-3 py-2 font-mono-terminal text-xs text-muted-foreground whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {filteredDevices.length === 0 && (
-            <div className="text-center py-8">
-              <Search size={24} className="text-muted-foreground/40 mx-auto mb-2" />
-              <p className="font-mono-terminal text-xs text-muted-foreground">没有找到匹配的设备</p>
+                </thead>
+                <tbody>
+                  {filtered.map(device => (
+                    <tr
+                      key={device.id}
+                      className="border-b border-border/50 hover:bg-primary/5 transition-colors"
+                    >
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className="font-mono-terminal text-xs text-foreground font-medium">
+                          {device.name}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-primary">
+                        {device.host}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-muted-foreground">
+                        {device.port}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-foreground">
+                        {device.user}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap font-mono-terminal text-xs text-muted-foreground">
+                        {new Date(device.addedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs font-mono-terminal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 glow-green-sm gap-1"
+                            onClick={() => handleConnect(device)}
+                            title={t('device.connect')}
+                          >
+                            <Terminal size={11} />
+                            {t('device.connect')}
+                            <ChevronRight size={11} />
+                          </Button>
+                          {SNAPSHOT_DEVICES.has(device.name.toLowerCase()) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs font-mono-terminal bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 gap-1"
+                              onClick={() => handleSnapshot(device)}
+                              disabled={snapshotLoading === device.id}
+                              title="Snapshot camera"
+                            >
+                              <Camera size={11} />
+                              {snapshotLoading === device.id ? '…' : 'Snapshot'}
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                            onClick={() => openEdit(device)}
+                            title={t('device.edit')}
+                          >
+                            <Edit2 size={12} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(device.id)}
+                            title={t('device.delete')}
+                          >
+                            <Trash2 size={12} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
+
+        <p className="font-mono-terminal text-xs text-muted-foreground text-center">
+          Devices are stored in your browser's localStorage — never sent to any server.
+        </p>
       </div>
+
+      {/* Snapshot result dialog */}
+      <Dialog open={snapshotDialogOpen} onOpenChange={setSnapshotDialogOpen}>
+        <DialogContent className="max-w-[calc(100%-2rem)] md:max-w-2xl bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-mono-terminal text-sm text-primary flex items-center gap-2">
+              <Camera size={14} />
+              Snapshot —{' '}
+              {snapshotResult
+                ? devices.find(d => d.id === snapshotResult.deviceId)?.name ?? 'Device'
+                : ''}
+            </DialogTitle>
+          </DialogHeader>
+          {snapshotResult?.data.error && (
+            <p className="font-mono-terminal text-xs text-destructive p-2 border border-destructive/30 rounded">
+              {snapshotResult.data.error}
+            </p>
+          )}
+          {snapshotResult?.data.gps_links && Object.keys(snapshotResult.data.gps_links).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(snapshotResult.data.gps_links).map(([cam, link]) => (
+                <a
+                  key={cam}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-mono-terminal text-xs text-primary underline hover:text-primary/80"
+                >
+                  <MapPin size={11} />
+                  {cam} GPS
+                </a>
+              ))}
+            </div>
+          )}
+          {snapshotResult?.data.photos && Object.keys(snapshotResult.data.photos).length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+              {Object.entries(snapshotResult.data.photos).map(([filename, photo]) => (
+                <div key={filename} className="space-y-1">
+                  <p className="font-mono-terminal text-xs text-muted-foreground flex items-center gap-1">
+                    {filename}
+                    {photo.fresh && (
+                      <span className="text-[10px] bg-primary/20 text-primary px-1 rounded">fresh</span>
+                    )}
+                  </p>
+                  <img
+                    src={`data:image/jpeg;base64,${photo.b64}`}
+                    alt={filename}
+                    className="w-full rounded border border-border object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            !snapshotResult?.data.error && (
+              <p className="font-mono-terminal text-xs text-muted-foreground text-center py-6">
+                No photos returned.
+              </p>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

@@ -4,9 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00ff41" />
+    <meta name="description" content="Your infrastructure. Your terminal. Your AI." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SIPA Shell" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>SIPA Shell</title>
+    <script defer src="https://cloud.umami.is/script.js" data-website-id="f5acf9c9-b423-4e8b-8396-47d7a479232d"></script>
+    <script src="https://browser.sentry-cdn.com/8.0.0/bundle.min.js" crossorigin="anonymous"></script>
+    <script>Sentry.init({dsn:"https://eb5c836276673bfe723e8052a64d39c1@o4511524169318400.ingest.us.sentry.io/4511524193107968",tracesSampleRate:1.0});</script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js');
+        });
+      }
+    </script>
+    <script>
+    (function(){
+      var s = document.createElement('script');
+      var h = document.querySelector('head') || document.body;
+      s.src = 'https://acsbapp.com/apps/app/dist/js/app.js';
+      s.async = true;
+      s.onload = function(){ acsbJS.init(); };
+      h.appendChild(s);
+    })();
+    </script>
   </body>
 </html>
