@@ -25,7 +25,7 @@ interface Device {
 }
 
 const STORAGE_KEY = 'sipa_devices';
-const WEBHOOK_SERVER = 'http://172.27.22.217:9922';
+const WEBHOOK_SERVER = `http://${import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217'}:9922`;
 const SNAPSHOT_DEVICES = new Set(['t15', 'x7']);
 
 interface SnapshotPhoto {
@@ -41,8 +41,8 @@ interface SnapshotResult {
 
 const SEED_DEVICES: Device[] = [
   { id: 'seed-t15', name: 'T15', host: '192.168.1.10', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
-  { id: 'seed-server', name: 'SERVER', host: '172.27.22.217', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
-  { id: 'seed-laptop', name: 'Laptop', host: '172.27.232.94', port: '22', user: 'aelin', addedAt: '2026-01-01T00:00:00.000Z' },
+  { id: 'seed-server', name: 'SERVER', host: import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
+  { id: 'seed-laptop', name: 'Laptop', host: import.meta.env.VITE_SIPA_LAPTOP_IP || '172.27.232.94', port: '22', user: 'aelin', addedAt: '2026-01-01T00:00:00.000Z' },
 ];
 
 function loadDevices(): Device[] {
