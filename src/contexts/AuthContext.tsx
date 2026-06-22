@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 // @ts-ignore
 import type { Profile } from '@/types/types';
 import { toast } from 'sonner';
+import posthog from 'posthog-js';
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
@@ -71,8 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         getProfile(session.user.id).then(setProfile);
+        posthog.identify(session.user.id, { email: session.user.email });
       } else {
         setProfile(null);
+        posthog.reset();
       }
     });
 
