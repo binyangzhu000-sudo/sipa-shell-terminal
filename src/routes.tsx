@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import LandingPage from './pages/LandingPage';
+import CallbackPage from './pages/CallbackPage';
 import ShellPage from './pages/ShellPage';
 import { OperatorGate } from './components/OperatorGate';
 import AiPage from './pages/AiPage';
@@ -11,6 +12,7 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import FaqPage from './pages/FaqPage';
 import TermsPage from './pages/TermsPage';
 import PolicyPage from './pages/PolicyPage';
+import MissionPage from './pages/MissionPage';
 
 export interface RouteConfig {
   name: string;
@@ -29,11 +31,18 @@ export const routes: RouteConfig[] = [
     visible: true,
   },
   {
+    name: 'Callback',
+    path: '/callback',
+    element: <CallbackPage />,
+    public: true,
+    visible: false,
+  },
+  {
     name: 'Terminal',
     path: '/shell',
     element: <OperatorGate><ShellPage /></OperatorGate>,
     public: true,
-    visible: true,
+    visible: false,
   },
   {
     name: 'AI Assistant',
@@ -54,7 +63,7 @@ export const routes: RouteConfig[] = [
     path: '/find-device',
     element: <FindDevicePage />,
     public: true,
-    visible: true,
+    visible: false,
   },
   {
     name: 'Settings',
@@ -95,6 +104,13 @@ export const routes: RouteConfig[] = [
     name: 'Privacy Policy',
     path: '/policy',
     element: <PolicyPage />,
+    public: true,
+    visible: false,
+  },
+  {
+    name: 'Mission',
+    path: '/mission',
+    element: <MissionPage />,
     public: true,
     visible: false,
   },

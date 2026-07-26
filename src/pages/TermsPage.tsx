@@ -74,7 +74,7 @@ export default function TermsPage() {
 
         <div className="glass-panel border border-border p-4">
           <p className="font-mono-terminal text-xs text-muted-foreground">
-            Last updated: June 1, 2026 &nbsp;·&nbsp; Effective immediately
+            Last updated: June 27, 2026 &nbsp;·&nbsp; Effective immediately
           </p>
         </div>
 
@@ -99,6 +99,10 @@ export default function TermsPage() {
           {' '}·{' '}
           <Link to="/support" className="text-primary hover:underline">
             Support
+          </Link>
+          {' '}·{' '}
+          <Link to="/mission" className="text-primary hover:underline">
+            Mission
           </Link>
         </p>
       </div>

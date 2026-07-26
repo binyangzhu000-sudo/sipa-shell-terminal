@@ -15,9 +15,9 @@ const SECTIONS: Section[] = [
       'Soul In PsyAbstract LLC ("SIPA OS", "we", "us") operates SIPA Shell at shell.sipa-os.org. This Privacy Policy explains what information we collect, how we use it, and your rights. We are committed to a minimal-data approach: we do not build user profiles, sell data, or track you across the web.',
   },
   {
-    title: '2. Information We Do Not Collect',
+    title: '2. Authentication & Account Data',
     content:
-      'SIPA Shell does not require account registration. We do not collect your name, email address, or any personally identifying information during normal use. We do not place advertising trackers, third-party analytics scripts, or persistent cookies on your device. SSH credentials (passwords and private keys) are never stored on our servers — they exist only in browser memory for the duration of your session.',
+      'We use Auth0 for authentication. When you sign in, Auth0 collects your email address and creates a secure session. We do not store your password — Auth0 handles credential management on your behalf. Your email address may be stored in our database solely to associate your saved preferences and device entries with your account. We do not collect your name or any other personally identifying information beyond what Auth0 provides. SSH credentials (passwords and private keys) are never stored on our servers — they exist only in browser memory for the duration of your session.',
   },
   {
     title: '3. Local Storage',
@@ -45,17 +45,22 @@ const SECTIONS: Section[] = [
       'We do not use Google Analytics, Mixpanel, Segment, or any other behavioural tracking service. We do not use fingerprinting, session recording, or heatmap tools.',
   },
   {
-    title: '8. Children',
+    title: '8. Cookies',
+    content:
+      'SIPA Shell uses a minimal set of cookies. Essential cookies: Auth0 sets secure, HTTP-only session cookies (e.g. auth0, auth0_compat) required to maintain your authenticated session; without these the Service cannot function. Analytics cookies: we use PostHog for product analytics, which may set a first-party cookie to distinguish unique sessions and measure feature usage. No advertising cookies: we do not use any cookies for advertising, retargeting, or cross-site tracking. You can clear all cookies for shell.sipa-os.org at any time via your browser settings; doing so will sign you out.',
+  },
+  {
+    title: '9. Children',
     content:
       'SIPA Shell is not directed at children under the age of 13. We do not knowingly collect any information from children.',
   },
   {
-    title: '9. Changes to This Policy',
+    title: '10. Changes to This Policy',
     content:
       'We may update this Privacy Policy from time to time. We will indicate the "Last updated" date at the top of this page. Continued use of the Service after any changes constitutes acceptance of the revised policy.',
   },
   {
-    title: '10. Contact',
+    title: '11. Contact',
     content:
       'For any privacy-related questions or data deletion requests, contact us at sipa-core@sipa-os.org. Soul In PsyAbstract LLC, 131 Continental Dr Suite 305, Newark, DE 19713, USA.',
   },
@@ -74,13 +79,13 @@ export default function PolicyPage() {
 
         <div className="glass-panel border border-border p-4">
           <p className="font-mono-terminal text-xs text-muted-foreground">
-            Last updated: June 1, 2026 &nbsp;·&nbsp; Effective immediately
+            Last updated: June 27, 2026 &nbsp;·&nbsp; Effective immediately
           </p>
         </div>
 
         <div className="glass-panel border border-primary/20 bg-primary/5 p-4">
           <p className="font-mono-terminal text-xs text-primary">
-            TL;DR — No server-side data storage. No trackers. No accounts required.
+            TL;DR — Authentication via Auth0. Minimal server-side data. No advertising trackers.
             Device lists live in your browser only.
           </p>
         </div>
@@ -106,6 +111,10 @@ export default function PolicyPage() {
           {' '}·{' '}
           <Link to="/support" className="text-primary hover:underline">
             Support
+          </Link>
+          {' '}·{' '}
+          <Link to="/mission" className="text-primary hover:underline">
+            Mission
           </Link>
         </p>
       </div>
