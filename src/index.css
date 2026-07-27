@@ -66,8 +66,14 @@
     --success: 133 100% 50%;
     --warning: 43 100% 55%;
     --info: 195 100% 50%;
+    --error: 0 72% 51%;
     --education-blue: 195 100% 50%;
     --education-green: 133 100% 50%;
+
+    /* Community widget panel surfaces (matches card/secondary tone) */
+    --panel: 0 0% 7%;
+    --panel2: 0 0% 10%;
+    --border2: 133 30% 15%;
 
     /* Custom design tokens */
     --terminal-green: 133 100% 50%;
