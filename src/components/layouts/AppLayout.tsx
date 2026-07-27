@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useLang } from '@/contexts/LangContext';
+import { useUnreadCommunityCount } from '@/community/notifications';
 
 type NavItemKey = 'nav.terminal' | 'nav.ai' | 'nav.connect' | 'nav.find_device' | 'nav.settings' | 'nav.support' | 'nav.subscription' | 'nav.faq';
 
@@ -50,6 +51,15 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
   );
 }
 
+function CommunityUnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-primary text-[10px] font-bold text-background leading-none">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
 interface AppLayoutProps {
   children: React.ReactNode;
   title?: string;
@@ -58,6 +68,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, title }: AppLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { lang, toggle } = useLang();
+  const { unread } = useUnreadCommunityCount();
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -75,15 +86,14 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
           <NavLinks />
         </nav>
         <div className="px-4 py-3 border-t border-border flex flex-col gap-2">
-          <a
-            href="https://community.sipa-os.org"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            to="/community"
             className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
           >
             <Users size={12} />
             <span>community.sipa-os.org</span>
-          </a>
+            <CommunityUnreadBadge count={unread} />
+          </Link>
           <p className="text-xs font-mono-terminal text-muted-foreground">v1.0.0 // dark</p>
         </div>
       </aside>
@@ -129,15 +139,15 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                 <NavLinks onClick={() => setMobileOpen(false)} />
               </nav>
               <div className="px-4 py-3 border-t border-border">
-                <a
-                  href="https://community.sipa-os.org"
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to="/community"
+                  onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Users size={12} />
                   <span>community.sipa-os.org</span>
-                </a>
+                  <CommunityUnreadBadge count={unread} />
+                </Link>
               </div>
             </SheetContent>
           </Sheet>

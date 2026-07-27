@@ -13,6 +13,7 @@ import FaqPage from './pages/FaqPage';
 import TermsPage from './pages/TermsPage';
 import PolicyPage from './pages/PolicyPage';
 import MissionPage from './pages/MissionPage';
+import CommunityPage from './pages/CommunityPage';
 
 export interface RouteConfig {
   name: string;
@@ -55,6 +56,13 @@ export const routes: RouteConfig[] = [
     name: 'Connect',
     path: '/connect',
     element: <ConnectPage />,
+    public: true,
+    visible: true,
+  },
+  {
+    name: 'Community',
+    path: '/community',
+    element: <CommunityPage />,
     public: true,
     visible: true,
   },

@@ -9,8 +9,8 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://xkwuqvpjnbtwdjhvjbki.supabase.co';
-const SUPABASE_ANON_KEY =
+export const SUPABASE_URL = 'https://xkwuqvpjnbtwdjhvjbki.supabase.co';
+export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhrd3VxdnBqbmJ0d2RqaHZqYmtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNTQ5ODYsImV4cCI6MjA5MTkzMDk4Nn0.rQgyk-ozekAknTNF7xpxj2YhUFHyNfLhZmzgzFstGw0';
 
 export const PRESENCE_CHANNEL = 'sipa-ecosystem-presence';
@@ -36,6 +36,11 @@ export function makePresenceSupabaseClient(accessToken?: string | null): Supabas
     },
   });
 }
+
+// Same shared SIPA ecosystem Supabase project/client shape as above — reused
+// by src/community/ (friends, DMs, channels, feed) so the app doesn't carry
+// two separate Supabase client factories pointed at the same project.
+export const makeSupabaseClient = makePresenceSupabaseClient;
 
 export async function ensurePresenceProfile(
   supabase: SupabaseClient,

@@ -4,6 +4,8 @@ import IntersectObserver from '@/components/common/IntersectObserver';
 import { Toaster } from '@/components/ui/sonner';
 import { PWAInstallBanner } from '@/components/PWAInstallBanner';
 import { usePresence } from '@/hooks/usePresence';
+import { CommunityProvider } from '@/community/context/CommunityContext';
+import { CommunityNotificationsProvider } from '@/community/notifications';
 import { routes } from './routes';
 
 const App: React.FC = () => {
@@ -16,20 +18,27 @@ const App: React.FC = () => {
   return (
     <Router>
       <IntersectObserver />
-      <div className="flex flex-col min-h-screen bg-background">
-        <main className="flex-grow">
-          <Routes>
-            {routes.map((route, index) => (
-              <Route
-                key={index}
-                path={route.path}
-                element={route.element}
-              />
-            ))}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
+      {/* Cross-app unread-message badge — mounted at root (not just on
+          /community) so a DM sent from another SIPA OS app surfaces here
+          no matter which page the user is currently on. */}
+      <CommunityProvider appSlug="shell">
+        <CommunityNotificationsProvider>
+          <div className="flex flex-col min-h-screen bg-background">
+            <main className="flex-grow">
+              <Routes>
+                {routes.map((route, index) => (
+                  <Route
+                    key={index}
+                    path={route.path}
+                    element={route.element}
+                  />
+                ))}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+          </div>
+        </CommunityNotificationsProvider>
+      </CommunityProvider>
       <PWAInstallBanner />
       <Toaster
         position="bottom-right"
