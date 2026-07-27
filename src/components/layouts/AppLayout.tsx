@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Terminal, Bot, Wifi, Search, Settings, HelpCircle,
-  CreditCard, MessageSquare, Menu, X, Zap, LogOut,
+  CreditCard, MessageSquare, Menu, X, Zap, LogOut, Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -74,7 +74,16 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
         <nav className="flex-1 px-2 py-4 flex flex-col gap-1 overflow-y-auto">
           <NavLinks />
         </nav>
-        <div className="px-4 py-3 border-t border-border">
+        <div className="px-4 py-3 border-t border-border flex flex-col gap-2">
+          <a
+            href="https://community.sipa-os.org"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Users size={12} />
+            <span>community.sipa-os.org</span>
+          </a>
           <p className="text-xs font-mono-terminal text-muted-foreground">v1.0.0 // dark</p>
         </div>
       </aside>
@@ -119,6 +128,17 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
               <nav className="px-2 py-4 flex flex-col gap-1 overflow-y-auto">
                 <NavLinks onClick={() => setMobileOpen(false)} />
               </nav>
+              <div className="px-4 py-3 border-t border-border">
+                <a
+                  href="https://community.sipa-os.org"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <Users size={12} />
+                  <span>community.sipa-os.org</span>
+                </a>
+              </div>
             </SheetContent>
           </Sheet>
 

@@ -3,9 +3,16 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import IntersectObserver from '@/components/common/IntersectObserver';
 import { Toaster } from '@/components/ui/sonner';
 import { PWAInstallBanner } from '@/components/PWAInstallBanner';
+import { usePresence } from '@/hooks/usePresence';
 import { routes } from './routes';
 
 const App: React.FC = () => {
+  // Ecosystem-wide "online" presence (community.sipa-os.org) — reuses this
+  // app's existing Auth0 session, no-ops while unauthenticated. Mounted here
+  // (not in AppLayout) so it survives route changes instead of
+  // resubscribing on every page nav.
+  usePresence();
+
   return (
     <Router>
       <IntersectObserver />
