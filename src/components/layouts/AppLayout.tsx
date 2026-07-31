@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Terminal, Bot, Wifi, Search, Settings, HelpCircle,
-  CreditCard, MessageSquare, Menu, X, Zap, LogOut, Users,
+  CreditCard, MessageSquare, Menu, X, Zap, LogOut, Users, Cpu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -86,14 +86,25 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
           <NavLinks />
         </nav>
         <div className="px-4 py-3 border-t border-border flex flex-col gap-2">
-          <Link
-            to="/community"
+          <a
+            href="https://community.sipa-os.org"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
           >
             <Users size={12} />
             <span>community.sipa-os.org</span>
             <CommunityUnreadBadge count={unread} />
-          </Link>
+          </a>
+          <a
+            href="https://sipa-syntax-api.soulinpsy.info"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Cpu size={12} />
+            <span>AI Community</span>
+          </a>
           <p className="text-xs font-mono-terminal text-muted-foreground">v1.0.0 // dark</p>
         </div>
       </aside>
@@ -139,15 +150,26 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                 <NavLinks onClick={() => setMobileOpen(false)} />
               </nav>
               <div className="px-4 py-3 border-t border-border">
-                <Link
-                  to="/community"
+                <a
+                  href="https://community.sipa-os.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors"
                 >
                   <Users size={12} />
                   <span>community.sipa-os.org</span>
                   <CommunityUnreadBadge count={unread} />
-                </Link>
+                </a>
+                <a
+                  href="https://sipa-syntax-api.soulinpsy.info"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs font-mono-terminal text-muted-foreground hover:text-primary transition-colors mt-2"
+                >
+                  <Cpu size={12} />
+                  <span>AI Community</span>
+                </a>
               </div>
             </SheetContent>
           </Sheet>
