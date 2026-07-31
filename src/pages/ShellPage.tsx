@@ -2,12 +2,42 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot } from 'lucide-react';
 import AppLayout from '@/components/layouts/AppLayout';
 import { TerminalPane, type TerminalHandle } from '@/components/TerminalPane';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Button } from '@/components/ui/button';
 import { useLang } from '@/contexts/LangContext';
+
+// Direct bash on the real server via a fixed operator password, no
+// per-connection host/credentials. Temporary allowlist until this moves to
+// something less fragile than a static password.
+const ALLOWED_EMAILS = new Set([
+  'soulinpsyabstract@outlook.com',
+  'sipa-core@sipa-os.org',
+  'soulinpsyabstract@gmail.com',
+]);
 
 export default function ShellPage() {
   const termRef = useRef<TerminalHandle>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const { t } = useLang();
+  const { user, isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+
+  if (isLoading) return null;
+  if (!isAuthenticated || !user?.email || !ALLOWED_EMAILS.has(user.email.toLowerCase())) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+          <p className="text-muted-foreground font-mono-terminal text-sm">
+            This page is still being worked on and isn't available yet.
+          </p>
+          {!isAuthenticated && (
+            <Button onClick={() => loginWithRedirect()} className="font-mono-terminal">
+              Log in
+            </Button>
+          )}
+        </div>
+      </AppLayout>
+    );
+  }
   const [aiInput, setAiInput] = useState('');
   const [aiMessages, setAiMessages] = useState<{ role: string; content: string }[]>([]);
   const [aiLoading, setAiLoading] = useState(false);

@@ -45,7 +45,7 @@ export default function SubscriptionPage() {
         { text: 'Priority support', available: false },
         { text: 'API access', available: false },
       ],
-      payments: [{ label: t('sub.free_cta'), url: '/shell', primary: true }],
+      payments: [{ label: t('sub.free_cta'), url: '/connect', primary: true }],
     },
     {
       id: 'pro',

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import AppLayout from '@/components/layouts/AppLayout';
 import { useUnreadCommunityCount } from '@/community/notifications';
+import AppLayout from '@/components/layouts/AppLayout';
 
 const COMMUNITY_URL = 'https://community.sipa-os.org';
 

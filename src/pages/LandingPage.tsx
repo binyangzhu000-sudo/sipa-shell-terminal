@@ -5,8 +5,10 @@ import {
   Settings, HelpCircle, CreditCard, MessageSquare, Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import GitHubButton from '@/components/GitHubButton';
 import { useLang } from '@/contexts/LangContext';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const TYPING_LINES = [
   `$ ssh sipa@${import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217'} -p 22`,
@@ -75,7 +77,7 @@ const featuresDef = [
     color: 'text-primary',
     borderColor: 'border-primary/30',
     glowClass: 'glow-green-sm',
-    href: '/shell',
+    href: '/connect',
   },
   {
     icon: Bot,
@@ -140,12 +142,11 @@ export { Footer };
 export default function LandingPage() {
   const { t, lang, toggle } = useLang();
   const { canInstall, install } = usePWAInstall();
+  const { loginWithRedirect } = useAuth0();
 
   const quickNavTranslated = [
-    { to: '/shell', icon: Terminal, label: t('nav.terminal') },
-    { to: '/ai', icon: Bot, label: t('nav.ai') },
     { to: '/connect', icon: Wifi, label: t('nav.connect') },
-    { to: '/find-device', icon: Search, label: t('nav.find_device') },
+    { to: '/ai', icon: Bot, label: t('nav.ai') },
     { to: '/settings', icon: Settings, label: t('nav.settings') },
     { to: '/support', icon: HelpCircle, label: t('nav.support') },
     { to: '/subscription', icon: CreditCard, label: t('nav.subscription') },
@@ -182,16 +183,15 @@ export default function LandingPage() {
           >
             {lang === 'ru' ? 'EN' : 'RU'}
           </button>
-          <a href="/login">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="font-mono-terminal text-xs border border-border text-muted-foreground hover:text-primary hover:border-primary/40 h-7 px-3"
-            >
-              {lang === 'ru' ? 'Войти' : 'Log in'}
-            </Button>
-          </a>
-          <Link to="/shell">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loginWithRedirect()}
+            className="font-mono-terminal text-xs border border-border text-muted-foreground hover:text-primary hover:border-primary/40 h-7 px-3"
+          >
+            {lang === 'ru' ? 'Войти' : 'Log in'}
+          </Button>
+          <Link to="/connect">
             <Button
               size="sm"
               className="font-mono-terminal text-xs bg-primary text-primary-foreground hover:bg-primary/90 glow-green-sm h-7 px-4"
@@ -222,20 +222,11 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
-          <Link to="/shell">
+          <Link to="/connect">
             <Button className="font-mono-terminal bg-primary text-primary-foreground hover:bg-primary/90 glow-green px-8 h-11 text-sm gap-2">
               <Terminal size={16} />
               {t('landing.launch')}
               <ArrowRight size={14} />
-            </Button>
-          </Link>
-          <Link to="/find-device">
-            <Button
-              variant="ghost"
-              className="font-mono-terminal border border-border text-muted-foreground hover:text-primary hover:border-primary/40 px-8 h-11 text-sm gap-2"
-            >
-              <Search size={16} />
-              {t('landing.find_devices')}
             </Button>
           </Link>
           <Link to="/ai">
@@ -257,6 +248,7 @@ export default function LandingPage() {
               {lang === 'ru' ? 'Установить приложение' : 'Install App'}
             </Button>
           )}
+          <GitHubButton variant="star" className="h-11 hidden sm:inline-flex" />
         </div>
 
         {/* Terminal preview */}

@@ -18,6 +18,7 @@ import React, {
   useState, useEffect, useRef, useCallback,
 } from 'react';
 import { toast } from 'sonner';
+import { useAuth0 } from '@auth0/auth0-react';
 import QRCode from 'qrcode';
 import {
   Wifi, Plus, Trash2, Copy, Edit2, Check, X, ChevronRight,
@@ -85,6 +86,7 @@ const emptyForm = (): ConnectForm => ({
 // ── SSH Terminal hook ──────────────────────────────────────────────────────
 
 function useSshSession(containerRef: React.RefObject<HTMLDivElement>) {
+  const { getIdTokenClaims } = useAuth0();
   const termRef      = useRef<import('@xterm/xterm').Terminal | null>(null);
   const fitRef       = useRef<import('@xterm/addon-fit').FitAddon | null>(null);
   const wsRef        = useRef<WebSocket | null>(null);
@@ -173,12 +175,24 @@ function useSshSession(containerRef: React.RefObject<HTMLDivElement>) {
 
     let token: string;
     try {
+      let idToken: string;
+      try {
+        const claims = await getIdTokenClaims();
+        if (!claims?.__raw) throw new Error('no id token');
+        idToken = claims.__raw;
+      } catch {
+        term.writeln('\x1b[31m[sipa] Не авторизован — войдите через кнопку логина\x1b[0m');
+        setStatusBoth('error');
+        setStatusMsg('Не авторизован');
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/api/ws-token`, {
         method: 'POST',
-        credentials: 'include', // session cookie
+        headers: { Authorization: `Bearer ${idToken}` },
       });
       if (res.status === 401) {
-        term.writeln('\x1b[31m[sipa] Не авторизован — войдите через /login\x1b[0m');
+        term.writeln('\x1b[31m[sipa] Не авторизован — войдите через кнопку логина\x1b[0m');
         setStatusBoth('error');
         setStatusMsg('Не авторизован');
         return;

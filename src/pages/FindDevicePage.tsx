@@ -12,8 +12,17 @@ import {
 } from '@/components/ui/dialog';
 import AppLayout from '@/components/layouts/AppLayout';
 import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { cn } from '@/lib/utils';
 import { useLang } from '@/contexts/LangContext';
+
+// WIP page — GPS/photo snapshot access to real devices (T15/X7), not the
+// generic bring-your-own-server tool. Temporary allowlist until finished.
+const ALLOWED_EMAILS = new Set([
+  'soulinpsyabstract@outlook.com',
+  'sipa-core@sipa-os.org',
+  'soulinpsyabstract@gmail.com',
+]);
 
 interface Device {
   id: string;
@@ -39,27 +48,12 @@ interface SnapshotResult {
   error?: string;
 }
 
-const SEED_DEVICES: Device[] = [
-  { id: 'seed-t15', name: 'T15', host: '192.168.1.10', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
-  { id: 'seed-server', name: 'SERVER', host: import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217', port: '22', user: 'sipa', addedAt: '2026-01-01T00:00:00.000Z' },
-  { id: 'seed-laptop', name: 'Laptop', host: import.meta.env.VITE_SIPA_LAPTOP_IP || '172.27.232.94', port: '22', user: 'aelin', addedAt: '2026-01-01T00:00:00.000Z' },
-];
-
 function loadDevices(): Device[] {
   try {
     const stored: Device[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    // Merge seeds: add any seed that isn't already present (by id or by host)
-    const existingIds = new Set(stored.map(d => d.id));
-    const existingHosts = new Set(stored.map(d => d.host));
-    const missing = SEED_DEVICES.filter(s => !existingIds.has(s.id) && !existingHosts.has(s.host));
-    if (missing.length > 0) {
-      const merged = [...missing, ...stored];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      return merged;
-    }
     return stored;
   } catch {
-    return SEED_DEVICES;
+    return [];
   }
 }
 
@@ -72,6 +66,25 @@ const emptyForm = { name: '', host: '', port: '22', user: '' };
 export default function FindDevicePage() {
   const navigate = useNavigate();
   const { t } = useLang();
+  const { user, isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
+
+  if (isLoading) return null;
+  if (!isAuthenticated || !user?.email || !ALLOWED_EMAILS.has(user.email.toLowerCase())) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+          <p className="text-muted-foreground font-mono-terminal text-sm">
+            This page is still being worked on and isn't available yet.
+          </p>
+          {!isAuthenticated && (
+            <Button onClick={() => loginWithRedirect()} className="font-mono-terminal">
+              Log in
+            </Button>
+          )}
+        </div>
+      </AppLayout>
+    );
+  }
   const [devices, setDevices] = useState<Device[]>(loadDevices);
   const [query, setQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);

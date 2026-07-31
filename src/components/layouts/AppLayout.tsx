@@ -1,14 +1,14 @@
+import {Bot, Cpu,
+  CreditCard, HelpCircle,LogOut, Menu, MessageSquare, Search, Settings, 
+  Terminal, Users, Wifi, X, Zap, 
+} from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  Terminal, Bot, Wifi, Search, Settings, HelpCircle,
-  CreditCard, MessageSquare, Menu, X, Zap, LogOut, Users, Cpu,
-} from 'lucide-react';
+import { useUnreadCommunityCount } from '@/community/notifications';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
 import { useLang } from '@/contexts/LangContext';
-import { useUnreadCommunityCount } from '@/community/notifications';
+import { cn } from '@/lib/utils';
 
 type NavItemKey = 'nav.terminal' | 'nav.ai' | 'nav.connect' | 'nav.find_device' | 'nav.settings' | 'nav.support' | 'nav.subscription' | 'nav.faq';
 
