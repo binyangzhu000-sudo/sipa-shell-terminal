@@ -11,7 +11,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const TYPING_LINES = [
-  `$ ssh sipa@${import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217'} -p 22`,
+  `$ ssh sipa@${import.meta.env.VITE_SIPA_SERVER_IP || 'your-server-ip'} -p 22`,
   'Connected to sipa-os-server...',
   '$ ls -la /var/log/',
   '$ tail -f /var/log/syslog',
@@ -439,7 +439,7 @@ export default function LandingPage() {
               { label: '──WSS──>', sub: 'wss://ws.soulinpsy.info', color: 'text-muted-foreground' },
               { label: 'WS Proxy', sub: 'ws-pty-proxy :2228', color: 'text-primary' },
               { label: '──SSH──>', sub: 'ssh2 library', color: 'text-muted-foreground' },
-              { label: 'SSH Server', sub: `sipa@${import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217'}`, color: 'text-primary' },
+              { label: 'SSH Server', sub: `sipa@${import.meta.env.VITE_SIPA_SERVER_IP || 'your-server-ip'}`, color: 'text-primary' },
             ].map((item, i) =>
               i % 2 === 0 ? (
                 <div

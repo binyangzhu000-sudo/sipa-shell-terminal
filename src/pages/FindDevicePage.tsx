@@ -34,7 +34,7 @@ interface Device {
 }
 
 const STORAGE_KEY = 'sipa_devices';
-const WEBHOOK_SERVER = `http://${import.meta.env.VITE_SIPA_SERVER_IP || '172.27.22.217'}:9922`;
+const WEBHOOK_SERVER = `http://${import.meta.env.VITE_SIPA_SERVER_IP}:9922`;
 const SNAPSHOT_DEVICES = new Set(['t15', 'x7']);
 
 interface SnapshotPhoto {
