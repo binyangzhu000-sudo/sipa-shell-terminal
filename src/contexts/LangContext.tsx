@@ -138,11 +138,11 @@ const translations = {
 type TranslationKey = keyof typeof translations.ru;
 interface LangContextType { lang: Lang; t: (key: TranslationKey) => string; toggle: () => void; }
 
-const LangContext = createContext<LangContextType>({ lang: 'ru', t: (k) => k, toggle: () => {} });
+const LangContext = createContext<LangContextType>({ lang: 'en', t: (k) => k, toggle: () => {} });
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>(() =>
-    (localStorage.getItem('sipa_lang') as Lang) || 'ru'
+    (localStorage.getItem('sipa_lang') as Lang) || 'en'
   );
   const toggle = () => {
     const next: Lang = lang === 'ru' ? 'en' : 'ru';

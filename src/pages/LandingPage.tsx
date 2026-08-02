@@ -99,10 +99,43 @@ const featuresDef = [
   },
 ];
 
+const ECOSYSTEM_LINKS = [
+  { href: 'https://sipa-os.org', label: 'SIPA OS — the full ecosystem' },
+  { href: 'https://focus.sipa-os.org', label: 'SIPA Focus — cognitive scaffolding for ADHD' },
+  { href: 'https://neuropower.sipa-os.org', label: 'Neuropower — How I Did It With BPD' },
+  { href: 'https://ai.sipa-os.org', label: 'SIPA AI — Protocol-0 cognitive assistant' },
+  { href: 'https://games.sipa-os.org', label: 'SIPA Games — neurodivergent-friendly games' },
+  { href: 'https://community.sipa-os.org', label: 'SIPA Community — connect with neurodivergent builders' },
+  { href: 'https://syntax.sipa-os.org', label: 'Syntaxit — open machine-to-machine AI network' },
+  { href: 'https://deck.sipa-os.org', label: 'Company Deck — investor pitch deck' },
+];
+
+function EcosystemLinks({ lang }: { lang: 'en' | 'ru' }) {
+  return (
+    <div className="max-w-5xl mx-auto pb-5 mb-5 border-b border-border/60">
+      <div className="font-mono-terminal text-[11px] text-muted-foreground/70 mb-2">
+        // {lang === 'ru' ? 'Экосистема SIPA OS' : 'SIPA OS Ecosystem'}
+      </div>
+      <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {ECOSYSTEM_LINKS.map(({ href, label }) => (
+          <a
+            key={href}
+            href={href}
+            className="font-mono-terminal text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
 function Footer() {
   const { t, lang, toggle } = useLang();
   return (
     <footer className="border-t border-border px-4 md:px-8 py-6">
+      <EcosystemLinks lang={lang} />
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Zap size={14} className="text-primary" />
