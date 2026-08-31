@@ -6,7 +6,8 @@
   "scripts": {
     "proxy": "node ws-ssh-proxy.js",
     "api": "node api.js",
-    "start": "node api.js"
+    "start": "node api.js",
+    "test": "node --test"
   },
   "dependencies": {
     "ws": "^8.18.0",

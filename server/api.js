@@ -1,7 +1,7 @@
 /**
  * SIPA Shell — AI API 服务器
  *
- * 用途：提供流式 AI 回答接口，支持 Claude / OpenAI
+ * 用途：提供流式 AI 回答接口，支持 Claude / OpenAI / Atlas Cloud
  * 运行：node server/api.js
  * 端口：默认 3001（API_PORT 环境变量可覆盖）
  *
@@ -10,7 +10,9 @@
  * 环境变量（server/.env 或系统环境）：
  *   ANTHROPIC_API_KEY=sk-ant-...   使用 Claude
  *   OPENAI_API_KEY=sk-...          使用 GPT（备选）
- *   AI_PROVIDER=anthropic|openai   默认 anthropic
+ *   ATLASCLOUD_API_KEY=...         使用 Atlas Cloud（备选）
+ *   ATLASCLOUD_MODEL=...           Atlas Cloud 模型（可选）
+ *   AI_PROVIDER=anthropic|openai|atlascloud   默认 anthropic
  *   CORS_ORIGIN=*                  允许的跨域来源
  */
 
@@ -20,6 +22,7 @@ require('dotenv').config({ path: `${__dirname}/.env` });
 
 const express = require('express');
 const cors = require('cors');
+const { resolveOpenAICompatibleProvider } = require('./ai-provider');
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
@@ -64,6 +67,7 @@ app.post('/ai/chat', async (req, res) => {
 - 代码放在 markdown 代码块中（指定语言）
 - 优先给出可直接运行的命令
 - 如需解释，放在命令之后`;
+  const openAICompatibleProvider = resolveOpenAICompatibleProvider(AI_PROVIDER);
 
   try {
     if (AI_PROVIDER === 'anthropic' && process.env.ANTHROPIC_API_KEY) {
@@ -87,12 +91,15 @@ app.post('/ai/chat', async (req, res) => {
       }
       res.end();
 
-    } else if (AI_PROVIDER === 'openai' && process.env.OPENAI_API_KEY) {
+    } else if (openAICompatibleProvider) {
       const OpenAI = require('openai');
-      const client = new OpenAI.default({ apiKey: process.env.OPENAI_API_KEY });
+      const client = new OpenAI.default({
+        apiKey: openAICompatibleProvider.apiKey,
+        ...(openAICompatibleProvider.baseURL ? { baseURL: openAICompatibleProvider.baseURL } : {}),
+      });
 
       const stream = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: openAICompatibleProvider.model,
         max_tokens: 2048,
         stream: true,
         messages: [
@@ -127,7 +134,7 @@ app.post('/ai/chat', async (req, res) => {
       } else if (userInput.includes('日志') || userInput.includes('log')) {
         response += '```bash\n# 实时系统日志\ntail -f /var/log/syslog\n\n# journalctl\njournalctl -xe -f\n\n# 查看特定服务日志\njournalctl -u nginx -n 100\n```';
       } else {
-        response += '请配置 ANTHROPIC_API_KEY 或 OPENAI_API_KEY 环境变量以获得完整 AI 功能。\n\n当前为演示模式，仅支持有限问答。';
+        response += '请配置 ANTHROPIC_API_KEY、OPENAI_API_KEY 或 ATLASCLOUD_API_KEY 环境变量以获得完整 AI 功能。\n\n当前为演示模式，仅支持有限问答。';
       }
 
       // 模拟流式输出
@@ -156,7 +163,7 @@ app.use((_req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[SIPA API] AI API 服务器已启动，监听 http://0.0.0.0:${PORT}`);
   console.log(`[SIPA API] AI 提供商: ${AI_PROVIDER}`);
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ATLASCLOUD_API_KEY) {
     console.warn('[SIPA API] ⚠️  未检测到 AI API Key，将使用 mock 模式');
   }
 });

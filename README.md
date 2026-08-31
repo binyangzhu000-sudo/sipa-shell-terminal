@@ -66,3 +66,13 @@ npx vite build --outDir dist-clean
 ### How to develop backend services?
 
 Configure environment variables and install relevant dependencies. If you need to use a database, please use the official version of Supabase.
+
+The AI assistant supports `anthropic` by default, plus optional `openai` and `atlascloud` providers. Atlas Cloud uses the existing OpenAI-compatible streaming path, so selecting it does not change the default behavior:
+
+```bash
+AI_PROVIDER=atlascloud
+ATLASCLOUD_API_KEY=your-api-key
+ATLASCLOUD_MODEL=deepseek-ai/deepseek-v4-pro
+```
+
+`ATLASCLOUD_MODEL` is optional. The default is `deepseek-ai/deepseek-v4-pro`, and the Atlas Cloud base URL is configured internally as `https://api.atlascloud.ai/v1`.
