@@ -5,6 +5,7 @@ const test = require('node:test');
 
 const {
   OPENAI_COMPATIBLE_PROVIDERS,
+  hasConfiguredAIKey,
   resolveOpenAICompatibleProvider,
 } = require('./ai-provider');
 
@@ -42,4 +43,24 @@ test('supports an Atlas Cloud model override', () => {
 test('returns null when the selected provider is not configured', () => {
   assert.equal(resolveOpenAICompatibleProvider('atlascloud', {}), null);
   assert.equal(resolveOpenAICompatibleProvider('anthropic', {}), null);
+});
+
+test('ignores inherited object keys when looking up the provider', () => {
+  for (const provider of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) {
+    assert.equal(resolveOpenAICompatibleProvider(provider, { undefined: 'x' }), null);
+  }
+});
+
+test('freezes each provider spec, not only the registry', () => {
+  assert.equal(Object.isFrozen(OPENAI_COMPATIBLE_PROVIDERS.atlascloud), true);
+  assert.equal(Object.isFrozen(OPENAI_COMPATIBLE_PROVIDERS.openai), true);
+});
+
+test('checks the key of the selected provider, not any provider key', () => {
+  assert.equal(hasConfiguredAIKey('anthropic', { ATLASCLOUD_API_KEY: 'k' }), false);
+  assert.equal(hasConfiguredAIKey('anthropic', { ANTHROPIC_API_KEY: 'k' }), true);
+  assert.equal(hasConfiguredAIKey('atlascloud', { ANTHROPIC_API_KEY: 'k' }), false);
+  assert.equal(hasConfiguredAIKey('atlascloud', { ATLASCLOUD_API_KEY: 'k' }), true);
+  assert.equal(hasConfiguredAIKey('openai', { OPENAI_API_KEY: 'k' }), true);
+  assert.equal(hasConfiguredAIKey('__proto__', { ATLASCLOUD_API_KEY: 'k' }), false);
 });

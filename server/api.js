@@ -22,7 +22,7 @@ require('dotenv').config({ path: `${__dirname}/.env` });
 
 const express = require('express');
 const cors = require('cors');
-const { resolveOpenAICompatibleProvider } = require('./ai-provider');
+const { hasConfiguredAIKey, resolveOpenAICompatibleProvider } = require('./ai-provider');
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
@@ -163,7 +163,7 @@ app.use((_req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[SIPA API] AI API 服务器已启动，监听 http://0.0.0.0:${PORT}`);
   console.log(`[SIPA API] AI 提供商: ${AI_PROVIDER}`);
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ATLASCLOUD_API_KEY) {
-    console.warn('[SIPA API] ⚠️  未检测到 AI API Key，将使用 mock 模式');
+  if (!hasConfiguredAIKey(AI_PROVIDER)) {
+    console.warn(`[SIPA API] ⚠️  未检测到 AI_PROVIDER=${AI_PROVIDER} 对应的 API Key，将使用 mock 模式`);
   }
 });
